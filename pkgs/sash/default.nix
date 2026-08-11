@@ -11,8 +11,8 @@ python3Packages.buildPythonApplication {
   src = fetchFromGitHub {
     owner = "riz0id";
     repo = "sash";
-    rev = "ca885e0704e97ada75dbd346448a7da39199cb7e";
-    hash = "sha256-Al3jUJ8UBEX+YzVYYmnzWt45BZNM45xpxKdyQhwhau4=";
+    rev = "9503914d30d02d37232e5acc886de31eb58dd5a9";
+    hash = "sha256-ANxeg5GRfO07CM4JxavmGTj47LsjX06coBEcDaK0VqE=";
   };
 
   pyproject = true;
