@@ -42,7 +42,11 @@ lib.mkMerge [
           "Read"
         ];
 
+        # The sed rule is a sash glob extension: Claude Code's native rule
+        # matching ignores it, but the sash permission hook denies matching
+        # commands (quoted or not) with the advice from denyAdvice below.
         permissions.deny = [
+          "Bash(sed -n [0-9]*,[0-9]*p*)"
           "Bash(grep:*)"
           "Bash(head:*)"
           "Bash(tail:*)"
@@ -55,6 +59,9 @@ lib.mkMerge [
           "Bash(ruff format :*)"
           "Bash(sudo:*)"
         ];
+
+        permissions.denyAdvice."Bash(sed -n [0-9]*,[0-9]*p*)" =
+          "Printing a line range with `sed -n 'M,Np'` is disallowed. Use the built-in Read tool with line addressing instead: offset = M, limit = N - M + 1.";
 
         # Auto-allow Bash commands that sash proves are literal-only and
         # covered by an existing Bash(...) allow rule; everything else falls
