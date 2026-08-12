@@ -46,6 +46,15 @@ in
       ];
     };
 
+    programs.claude-code.context = ''
+      Use the `serena` MCP server (`mcp__serena__*`) for locating, editing and replacing code:
+      - Locate with `find_symbol` / `get_symbols_overview`
+      - Edit with `replace_symbol_body`, `insert_after_symbol` / `insert_before_symbol`, or `rename_symbol` for symbol-level changes
+      - Replace with `replace_content` / `replace_in_files` for other in-file edits.
+
+      Use the built-in Edit and Write tools for new files, non-code files, and languages serena does not support.
+    '';
+
     # Symbolic read/query tools only; editing tools (replace_symbol_body,
     # insert_*_symbol, rename_symbol, replace_content, write_memory, ...)
     # stay unlisted so Claude Code prompts.
