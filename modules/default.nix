@@ -21,6 +21,8 @@
 
     nixos.enable = true;
 
+    serena.enable = true;
+
     time.enable = true;
   };
 }

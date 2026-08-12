@@ -16,4 +16,6 @@ pkgs:
   mcp-nixos = pkgs.callPackage ./mcp-nixos { };
 
   sash = pkgs.callPackage ./sash { };
+
+  serena = pkgs.callPackage ./serena { };
 }

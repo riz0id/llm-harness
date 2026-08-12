@@ -1,0 +1,67 @@
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+let
+  helpers = import ../../../lib.nix { inherit lib; };
+
+  serena = pkgs.callPackage ../../../pkgs/serena { };
+in
+{
+  options.tooling.mcp.serena = lib.mkOption {
+    description = "The 'serena' MCP server.";
+
+    default = { };
+
+    type = lib.types.submodule {
+      options = {
+        enable = lib.mkEnableOption "serena";
+
+        context = lib.mkOption {
+          type = lib.types.str;
+          default = "claude-code";
+          description = "Serena context to run with (built-in name or path to a custom context YAML).";
+        };
+      };
+    };
+  };
+
+  config = lib.mkIf (config.programs.claude-code.enable && config.tooling.mcp.serena.enable) {
+    tooling.mcp.servers.serena = {
+      command = lib.getExe serena;
+
+      # The dashboard and GUI log window are disabled: a stdio MCP server must
+      # not spawn browser windows, and the package omits the GUI dependencies.
+      args = [
+        "start-mcp-server"
+        "--context"
+        config.tooling.mcp.serena.context
+        "--enable-web-dashboard"
+        "false"
+        "--enable-gui-log-window"
+        "false"
+      ];
+    };
+
+    # Symbolic read/query tools only; editing tools (replace_symbol_body,
+    # insert_*_symbol, rename_symbol, replace_content, write_memory, ...)
+    # stay unlisted so Claude Code prompts.
+    programs.claude-code.settings.permissions.allow = map (helpers.claude-mcp-tool "serena") [
+      "activate_project"
+      "get_current_config"
+      "initial_instructions"
+      "onboarding"
+      "get_symbols_overview"
+      "find_symbol"
+      "find_referencing_symbols"
+      "find_implementations"
+      "find_declaration"
+      "get_diagnostics_for_file"
+      "read_memory"
+      "list_memories"
+    ];
+  };
+}

@@ -7,6 +7,7 @@
     ./git.nix
     ./github.nix
     ./nixos.nix
+    ./serena.nix
     ./time.nix
   ];
 }
