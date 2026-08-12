@@ -1,12 +1,13 @@
-# Batteries-included entry point: claude-code with baked-in policy plus every
-# MCP server enabled. Consumers set machine-specific values, most importantly
-# `tooling.mcp.filesystem.directories'.
+# Batteries-included entry point: claude-code and codex with baked-in policy
+# plus every MCP server enabled. Consumers set machine-specific values, most
+# importantly `tooling.mcp.filesystem.directories'.
 
 { ... }:
 
 {
   imports = [
     ./claude-code
+    ./codex
     ./mcp
   ];
 

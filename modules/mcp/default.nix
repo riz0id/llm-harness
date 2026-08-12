@@ -19,12 +19,13 @@ let
 
   mkWarning =
     name:
-    lib.optional (
-      cfg.${name}.enable && !config.programs.claude-code.enable
-    ) "The '${name}' MCP server is enabled without `programs.claude-code.enable = true'.";
+    lib.optional
+      (cfg.${name}.enable && !config.programs.claude-code.enable && !config.programs.codex.enable)
+      "The '${name}' MCP server is enabled without `programs.claude-code.enable = true' or `programs.codex.enable = true'.";
 in
 {
   imports = [
+    ../common
     ./servers
   ];
 
@@ -71,6 +72,13 @@ in
         '';
         inherit (pkgs.claude-code) meta;
       };
+    })
+
+    (lib.mkIf (config.programs.codex.enable && cfg.servers != { }) {
+      # Codex reads MCP servers natively from config.toml; no wrapper needed.
+      # Server modules layer codex-specific settings (approval modes, arg
+      # overrides) on top of these entries.
+      programs.codex.settings.mcp_servers = cfg.servers;
     })
   ];
 }

@@ -28,4 +28,17 @@
   # Produces the permission rule name for a tool of an MCP server passed
   # to Claude Code via `--mcp-config'.
   claude-mcp-tool = server: tool: "mcp__${server}__${tool}";
+
+  # Renders a Starlark `prefix_rule' entry for a Codex rules file
+  # (CODEX_HOME/rules/*.rules). JSON string/list literals are valid Starlark,
+  # so builtins.toJSON handles all quoting.
+  codex-prefix-rule =
+    {
+      pattern,
+      decision ? "allow",
+      justification ? null,
+    }:
+    "prefix_rule(pattern = ${builtins.toJSON pattern}, decision = ${builtins.toJSON decision}"
+    + lib.optionalString (justification != null) ", justification = ${builtins.toJSON justification}"
+    + ")";
 }

@@ -21,11 +21,21 @@ in
     };
   };
 
-  config = lib.mkIf (config.programs.claude-code.enable && config.tooling.mcp.fetch.enable) {
-    tooling.mcp.servers.fetch.command = lib.getExe pkgs.mcp-server-fetch;
+  config = lib.mkIf config.tooling.mcp.fetch.enable (
+    lib.mkMerge [
+      {
+        tooling.mcp.servers.fetch.command = lib.getExe pkgs.mcp-server-fetch;
+      }
 
-    programs.claude-code.settings.permissions.allow = [
-      (helpers.claude-mcp-tool "fetch" "fetch")
-    ];
-  };
+      (lib.mkIf config.programs.claude-code.enable {
+        programs.claude-code.settings.permissions.allow = [
+          (helpers.claude-mcp-tool "fetch" "fetch")
+        ];
+      })
+
+      (lib.mkIf config.programs.codex.enable {
+        programs.codex.settings.mcp_servers.fetch.default_tools_approval_mode = "auto";
+      })
+    ]
+  );
 }

@@ -1,5 +1,5 @@
 {
-  description = "Claude Code + MCP server configuration as reusable home-manager modules";
+  description = "Claude Code + Codex + MCP server configuration as reusable home-manager modules";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -24,6 +24,8 @@
 
       homeModules = {
         claude-code = import ./modules/claude-code;
+
+        codex = import ./modules/codex;
 
         mcp = import ./modules/mcp;
 

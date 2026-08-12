@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
-"""Record Bash commands requested by Claude Code in a SQLite database."""
+"""Record shell commands requested by coding agents in a SQLite database."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import os
+import shlex
 import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-
 
 DEFAULT_DATABASE = Path.home() / ".claude" / "command-log.sqlite"
 
@@ -69,6 +69,9 @@ def record() -> int:
 
     tool_input = payload.get("tool_input")
     command = tool_input.get("command") if isinstance(tool_input, dict) else None
+    if isinstance(command, list) and all(isinstance(part, str) for part in command):
+        # Codex's shell tool passes the command as an argv list.
+        command = shlex.join(command)
     if not isinstance(command, str):
         return 0
 

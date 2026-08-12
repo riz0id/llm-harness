@@ -21,14 +21,24 @@ in
     };
   };
 
-  config = lib.mkIf (config.programs.claude-code.enable && config.tooling.mcp.time.enable) {
-    # getExe' rather than getExe: the pinned nixpkgs ships mcp-server-time
-    # with meta.mainProgram mistakenly set to "mcp-server-git".
-    tooling.mcp.servers.time.command = lib.getExe' pkgs.mcp-server-time "mcp-server-time";
+  config = lib.mkIf config.tooling.mcp.time.enable (
+    lib.mkMerge [
+      {
+        # getExe' rather than getExe: the pinned nixpkgs ships mcp-server-time
+        # with meta.mainProgram mistakenly set to "mcp-server-git".
+        tooling.mcp.servers.time.command = lib.getExe' pkgs.mcp-server-time "mcp-server-time";
+      }
 
-    programs.claude-code.settings.permissions.allow = map (helpers.claude-mcp-tool "time") [
-      "get_current_time"
-      "convert_time"
-    ];
-  };
+      (lib.mkIf config.programs.claude-code.enable {
+        programs.claude-code.settings.permissions.allow = map (helpers.claude-mcp-tool "time") [
+          "get_current_time"
+          "convert_time"
+        ];
+      })
+
+      (lib.mkIf config.programs.codex.enable {
+        programs.codex.settings.mcp_servers.time.default_tools_approval_mode = "auto";
+      })
+    ]
+  );
 }
