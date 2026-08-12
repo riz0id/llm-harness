@@ -27,6 +27,10 @@ in
     tooling.mcp.servers.nixos.command = lib.getExe mcp-nixos;
 
     programs.claude-code = {
+      context = ''
+        For `nix` queries use the `nixos` MCP server (`mcp__nixos__*`).
+      '';
+
       # Both tools are read-only queries against the NixOS/Home Manager/darwin
       # option and package indices.
       settings.permissions.allow = map (helpers.claude-mcp-tool "nixos") [

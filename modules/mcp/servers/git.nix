@@ -25,6 +25,10 @@ in
     tooling.mcp.servers.git.command = lib.getExe pkgs.mcp-server-git;
 
     programs.claude-code = {
+      context = ''
+        For `git` use the `git` MCP server (`mcp__git__*`).
+      '';
+
       # Read-only tools only; write tools (git_add, git_commit, git_reset,
       # git_checkout, git_create_branch) stay unlisted so Claude Code prompts.
       settings.permissions.allow = map (helpers.claude-mcp-tool "git") [

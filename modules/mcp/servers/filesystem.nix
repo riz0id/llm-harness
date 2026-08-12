@@ -38,6 +38,10 @@ in
     tooling.mcp.addDirs = config.tooling.mcp.filesystem.directories;
 
     programs.claude-code = {
+      context = ''
+        For filesystem operations use the `filesystem` MCP server (`mcp__filesystem__*`).
+      '';
+
       # Read-only tools only; write tools (write_file, edit_file,
       # create_directory, move_file) stay unlisted so Claude Code prompts.
       settings.permissions.allow = map (helpers.claude-mcp-tool "filesystem") [

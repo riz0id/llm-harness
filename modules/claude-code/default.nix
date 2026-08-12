@@ -23,7 +23,15 @@ lib.mkMerge [
 
       agents = { };
 
-      context = builtins.readFile ./context.md;
+      context = ''
+        Do not format code.
+        Do not lint code.
+        Do not include testing/verification in plans.
+        Use `rg` rather than `grep`.
+        Do not use the `head` command.
+        Do not use the `tail` command.
+        End the response when the answer is complete.
+      '';
 
       settings = {
         model = "claude-fable-5";

@@ -32,6 +32,10 @@ in
       gh-mcp
     ];
 
+    programs.claude-code.context = ''
+      For `gh` / GitHub operations use the `github` MCP server (`mcp__github__*`).
+    '';
+
     programs.claude-code.settings.hooks.PreToolUse = [
       {
         matcher = "Bash";
