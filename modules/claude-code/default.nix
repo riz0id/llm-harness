@@ -15,6 +15,38 @@ let
     pkgs.nixfmt
     pkgs.terraform
   ];
+
+  # A global core.hooksPath shadows every repo-local .git/hooks, so each hook
+  # here ends by delegating to the repo-local hook of the same name.
+  gitHookDelegate = name: ''
+    repo_hook="$(git rev-parse --git-path hooks)/${name}"
+    [ -x "$repo_hook" ] && exec "$repo_hook" "$@"
+    exit 0
+  '';
+
+  gitHooks = pkgs.linkFarm "llm-git-hooks" (
+    [
+      {
+        name = "commit-msg";
+        path = pkgs.writeShellScript "commit-msg" ''
+          ${lib.getExe llm-hooks} git-commit-msg "$1"
+          ${gitHookDelegate "commit-msg"}
+        '';
+      }
+    ]
+    ++
+      map
+        (name: {
+          inherit name;
+          path = pkgs.writeShellScript name (gitHookDelegate name);
+        })
+        [
+          "pre-commit"
+          "prepare-commit-msg"
+          "post-commit"
+          "pre-push"
+        ]
+  );
 in
 {
   imports = [ ../common ];
@@ -86,6 +118,13 @@ in
                   command = lib.getExe' sash "sash-permission-hook";
                   timeout = 10;
                 }
+                # Raw-text denials (e.g. redirect patterns) that neither
+                # Claude Code's native rules nor sash stage matching can see.
+                {
+                  type = "command";
+                  command = "${lib.getExe llm-hooks} claude-pre-bash";
+                  timeout = 10;
+                }
               ];
             }
           ];
@@ -113,6 +152,10 @@ in
             llm-hooks
             sash
           ];
+
+          # Strip Claude attribution from commit messages before they land.
+          # Only takes effect when the consuming config enables programs.git.
+          programs.git.extraConfig.core.hooksPath = "${gitHooks}";
         }
         (lib.mkIf config.programs.vscode.enable {
           # nodejs is required by the claude-code vscode extension.

@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
-
 
 PATCH_PATH_PREFIXES = (
     "*** Update File: ",
@@ -140,6 +140,77 @@ def post_edit(collect: Callable[[dict[str, Any]], list[str]]) -> int:
     return 0
 
 
+# Raw-text denials for patterns that sash cannot express: its deny matching
+# only sees a stage's words, never redirects.
+RAW_BASH_DENIALS = (
+    (
+        re.compile(r"nix-instantiate\s+--parse\b.*>\s*/dev/null"),
+        "`nix-instantiate --parse ... > /dev/null` is disallowed. Checking "
+        "syntax is not a valid form of testing",
+    ),
+)
+
+
+def claude_pre_bash() -> int:
+    """Deny Bash commands whose raw text matches a RAW_BASH_DENIALS pattern."""
+    try:
+        payload = json.load(sys.stdin)
+    except (json.JSONDecodeError, OSError):
+        return 0
+    if not isinstance(payload, dict) or payload.get("tool_name") != "Bash":
+        return 0
+    tool_input = payload.get("tool_input")
+    command = tool_input.get("command") if isinstance(tool_input, dict) else None
+    if not isinstance(command, str):
+        return 0
+    for pattern, reason in RAW_BASH_DENIALS:
+        if pattern.search(command):
+            json.dump(
+                {
+                    "hookSpecificOutput": {
+                        "hookEventName": "PreToolUse",
+                        "permissionDecision": "deny",
+                        "permissionDecisionReason": reason,
+                    }
+                },
+                sys.stdout,
+            )
+            sys.stdout.write("\n")
+            return 0
+    return 0
+
+
+ATTRIBUTION_PATTERNS = (
+    re.compile(
+        r"^co-authored-by: claude\b.*<noreply@anthropic\.com>\s*$", re.IGNORECASE
+    ),
+    re.compile(r"generated with \[claude code\]", re.IGNORECASE),
+)
+
+
+def strip_attribution(message: str) -> str:
+    lines = [
+        line
+        for line in message.splitlines()
+        if not any(pattern.search(line) for pattern in ATTRIBUTION_PATTERNS)
+    ]
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines) + "\n" if lines else ""
+
+
+def git_commit_msg(message_file: Path) -> int:
+    """Strip LLM attribution lines from a git commit-msg hook's message file."""
+    try:
+        message = message_file.read_text()
+        stripped = strip_attribution(message)
+        if stripped != message:
+            message_file.write_text(stripped)
+    except OSError:
+        pass
+    return 0
+
+
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="llm-hooks", description=__doc__)
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -151,6 +222,15 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         "claude-post-edit",
         help="Format files from a Claude Code PostToolUse edit payload.",
     )
+    subcommands.add_parser(
+        "claude-pre-bash",
+        help="Deny Bash commands matching raw-text patterns sash cannot express.",
+    )
+    commit_msg = subcommands.add_parser(
+        "git-commit-msg",
+        help="Strip LLM attribution lines from a git commit message file.",
+    )
+    commit_msg.add_argument("message_file", type=Path)
     return parser.parse_args(argv)
 
 
@@ -160,6 +240,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return post_edit(codex_edited_files)
     if args.command == "claude-post-edit":
         return post_edit(claude_edited_files)
+    if args.command == "claude-pre-bash":
+        return claude_pre_bash()
+    if args.command == "git-commit-msg":
+        return git_commit_msg(args.message_file)
     raise AssertionError(f"Unhandled command: {args.command}")
 
 

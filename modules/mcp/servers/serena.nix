@@ -48,6 +48,10 @@ in
           ];
         };
 
+        # solidlsp downloads most language servers on demand, but nixd must
+        # already be on PATH for serena to initialize Nix projects.
+        home.packages = [ pkgs.nixd ];
+
         tooling.context = ''
           Use the `serena` MCP server (`mcp__serena__*`) for locating, editing and replacing code:
           - Locate with `find_symbol` / `get_symbols_overview`
