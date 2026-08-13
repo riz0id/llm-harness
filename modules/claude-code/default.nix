@@ -18,8 +18,10 @@ let
 
   # A global core.hooksPath shadows every repo-local .git/hooks, so each hook
   # here ends by delegating to the repo-local hook of the same name.
+  # `--git-path hooks` honors core.hooksPath and would resolve back to this
+  # linkFarm (an infinite self-exec), so resolve via --git-dir instead.
   gitHookDelegate = name: ''
-    repo_hook="$(git rev-parse --git-path hooks)/${name}"
+    repo_hook="$(git rev-parse --git-dir)/hooks/${name}"
     [ -x "$repo_hook" ] && exec "$repo_hook" "$@"
     exit 0
   '';
