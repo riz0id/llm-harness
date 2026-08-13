@@ -80,12 +80,36 @@ in
           "read_memory"
           "list_memories"
         ];
+
+        # `git apply` is an editing path that bypasses both serena's symbolic
+        # tools and the built-in Edit/Write tools; deny it in Bash.
+        programs.claude-code.settings.permissions.deny = [ "Bash(git apply:*)" ];
+
+        programs.claude-code.settings.hooks.PreToolUse = [
+          {
+            matcher = "Bash";
+            hooks = [
+              (helpers.claude-deny-bash-hook "Bash(git apply:*)" "Applying patches with `git apply` is disallowed. Edit code through the serena MCP server (replace_symbol_body, insert_after_symbol / insert_before_symbol, replace_content / replace_in_files) or the built-in Edit and Write tools instead.")
+            ];
+          }
+        ];
       })
 
       (lib.mkIf config.programs.codex.enable {
         # "writes" auto-approves read-only tools and prompts for mutating ones,
         # approximating the per-tool allowlist Claude Code gets above.
         programs.codex.settings.mcp_servers.serena.default_tools_approval_mode = "writes";
+
+        programs.codex.rules.llm-harness = lib.concatLines [
+          (helpers.codex-prefix-rule {
+            pattern = [
+              "git"
+              "apply"
+            ];
+            decision = "forbidden";
+            justification = "Applying patches with `git apply` is disallowed in the shell. Edit code through the serena MCP server (replace_symbol_body, insert_after_symbol / insert_before_symbol, replace_content / replace_in_files) or the built-in file editing tools instead.";
+          })
+        ];
 
         # Serena ships a dedicated codex context; override the shared registry
         # entry (which carries the claude-code context) for Codex only. A custom
